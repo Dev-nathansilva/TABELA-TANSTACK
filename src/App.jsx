@@ -31,6 +31,7 @@ export default function App() {
     () => [
       {
         id: "select",
+        enableResizing: false,
         header: ({ table }) => (
           <input
             type="checkbox"
@@ -47,6 +48,7 @@ export default function App() {
             onChange={row.getToggleSelectedHandler()}
           />
         ),
+        size: 50,
       },
       {
         accessorKey: "name",
@@ -70,6 +72,8 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
+        enableResizing: true,
+        size: 150,
       },
       {
         accessorKey: "cpf",
@@ -93,6 +97,8 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
+        enableResizing: true,
+        size: 200,
       },
       {
         accessorKey: "city",
@@ -116,11 +122,15 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
+        enableResizing: true,
+        size: 180,
       },
       {
         accessorKey: "status",
         header: "Status",
         enableSorting: true,
+        enableResizing: true,
+        size: 100,
         cell: ({ getValue }) => (
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -142,6 +152,8 @@ export default function App() {
             <FiTrash2 className="cursor-pointer text-red-500" />
           </div>
         ),
+        enableResizing: false,
+        size: 150,
       },
     ],
     []
@@ -164,13 +176,15 @@ export default function App() {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(), // Confirma que a ordenação está ativada
+    getSortedRowModel: getSortedRowModel(),
     state: {
       globalFilter,
       columnFilters,
       pagination,
     },
     onPaginationChange: setPagination,
+    enableColumnResizing: true,
+    columnResizeMode: "onChange", // Certifique-se de usar 'onChange' para permitir ajustes independentes de cada coluna
   });
 
   const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
@@ -247,55 +261,78 @@ export default function App() {
         </select>
       </div>
 
-      <table className="w-full border-separate border-spacing-y-3">
-        <thead className="bg-white">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} className="p-3 text-left font-semibold">
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="p-4 text-center text-gray-500"
-              >
-                Nenhum item encontrado
-              </td>
-            </tr>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className={` rounded-[100px] shadow-md ${
-                  row.getIsSelected() ? "bg-blue-100" : "bg-white"
-                }`}
-              >
-                {row.getVisibleCells().map((cell, index, array) => (
-                  <td
-                    key={cell.id}
-                    className={`p-4 text-left ${
-                      index === 0 ? "rounded-l-[100px]" : ""
-                    } ${index === array.length - 1 ? "rounded-r-[100px]" : ""}`}
+      {/* Contêiner de tabela com overflow-x-auto */}
+      <div className="overflow-x-auto">
+        <table className="w-max border-separate border-spacing-y-3">
+          <thead className="bg-white">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="p-3 text-left font-semibold relative"
+                    style={{ width: header.getSize() }}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+
+                    {/* Div para arrastar e redimensionar */}
+                    {header.column.getCanResize() && (
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-gray-50"
+                      />
+                    )}
+                  </th>
                 ))}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </thead>
 
+          <tbody>
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="p-4 text-center text-gray-500"
+                >
+                  Nenhum item encontrado
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`rounded-[100px] shadow-md ${
+                    row.getIsSelected() ? "bg-blue-100" : "bg-white"
+                  }`}
+                >
+                  {row.getVisibleCells().map((cell, index, array) => (
+                    <td
+                      key={cell.id}
+                      className={`p-4 text-left ${
+                        index === 0 ? "rounded-l-[100px]" : ""
+                      } ${
+                        index === array.length - 1 ? "rounded-r-[100px]" : ""
+                      }`}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginador */}
       <div className="flex justify-between mt-4 items-center">
         <span>Total: {filteredData.length}</span>
         <div className="flex gap-2">
