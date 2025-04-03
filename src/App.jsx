@@ -357,6 +357,26 @@ export default function App() {
 
         <div className="mb-4">
           <h3 className="font-semibold">Ocultar/Exibir Colunas</h3>
+
+          {/* Checkbox para selecionar/desmarcar todas as colunas */}
+          <label className="block font-medium mb-2">
+            <input
+              type="checkbox"
+              checked={Object.values(visibleColumns).every(Boolean)} // Verifica se todas as colunas estão marcadas
+              onChange={(e) => {
+                const isChecked = e.target.checked;
+                const updatedColumns = {};
+                columns.forEach((col) => {
+                  updatedColumns[col.id] = isChecked;
+                });
+                setVisibleColumns(updatedColumns); // Atualiza o estado de todas as colunas
+              }}
+              className="mr-2"
+            />
+            Selecionar/Desmarcar Tudo
+          </label>
+
+          {/* Checkboxes individuais para cada coluna */}
           {columns.map((col) => (
             <label key={col.id} className="block">
               <input
