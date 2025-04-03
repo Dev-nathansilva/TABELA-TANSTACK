@@ -35,6 +35,7 @@ export default function App() {
   const [columns, setColumns] = useState([
     {
       id: "select",
+      accessorKey: "⬜",
       enableResizing,
       header: ({ table }) => (
         <input
@@ -52,7 +53,7 @@ export default function App() {
           onChange={row.getToggleSelectedHandler()}
         />
       ),
-      size: 50,
+      size: 70,
     },
     {
       id: "name",
@@ -163,7 +164,7 @@ export default function App() {
         </div>
       ),
       enableResizing,
-      size: 150,
+      size: 140,
     },
   ]);
 
@@ -290,7 +291,6 @@ export default function App() {
           onClick={() => setIsFilterOpen(true)}
         />
       </div>
-
       {isFilterOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
@@ -313,7 +313,6 @@ export default function App() {
           </div>
         </div>
       )}
-
       <div className="mb-2">
         <label>Itens por página: </label>
         <select
@@ -335,61 +334,65 @@ export default function App() {
         </select>
       </div>
 
-      {/* Contêiner de tabela com overflow-x-auto */}
-      <div className="overflow-x-auto">
-        <label className="flex items-center gap-2 mb-4">
+      <div className="flex gap-10">
+        {/* Redimensionamento */}
+        <div className="flex gap-1.5">
           <input
+            class="switch"
             type="checkbox"
             checked={enableResizing}
             onChange={() => setEnableResizing((prev) => !prev)}
           />
-          Ativar Redimensionamento
-        </label>
+          Redimensionamento
+        </div>
 
-        <label className="flex items-center gap-2 mb-4">
+        {/* Reordenação */}
+        <div className="flex gap-1.5">
           <input
+            class="switch"
             type="checkbox"
             checked={enableDragging}
             onChange={() => setEnableDragging((prev) => !prev)}
           />
           Ativar Reordenação de Colunas
+        </div>
+      </div>
+      <div className="mb-4">
+        <h3 className="font-semibold">Ocultar/Exibir Colunas</h3>
+
+        {/* Checkbox para selecionar/desmarcar todas as colunas */}
+        <label className="block font-medium mb-2">
+          <input
+            type="checkbox"
+            checked={Object.values(visibleColumns).every(Boolean)} // Verifica se todas as colunas estão marcadas
+            onChange={(e) => {
+              const isChecked = e.target.checked;
+              const updatedColumns = {};
+              columns.forEach((col) => {
+                updatedColumns[col.id] = isChecked;
+              });
+              setVisibleColumns(updatedColumns); // Atualiza o estado de todas as colunas
+            }}
+            className="mr-2"
+          />
+          Selecionar/Desmarcar Tudo
         </label>
 
-        <div className="mb-4">
-          <h3 className="font-semibold">Ocultar/Exibir Colunas</h3>
-
-          {/* Checkbox para selecionar/desmarcar todas as colunas */}
-          <label className="block font-medium mb-2">
+        {/* Checkboxes individuais para cada coluna */}
+        {columns.map((col) => (
+          <label key={col.id} className="block">
             <input
               type="checkbox"
-              checked={Object.values(visibleColumns).every(Boolean)} // Verifica se todas as colunas estão marcadas
-              onChange={(e) => {
-                const isChecked = e.target.checked;
-                const updatedColumns = {};
-                columns.forEach((col) => {
-                  updatedColumns[col.id] = isChecked;
-                });
-                setVisibleColumns(updatedColumns); // Atualiza o estado de todas as colunas
-              }}
+              checked={visibleColumns[col.id]}
+              onChange={() => toggleColumnVisibility(col.id)}
               className="mr-2"
             />
-            Selecionar/Desmarcar Tudo
+            {col.id}
           </label>
-
-          {/* Checkboxes individuais para cada coluna */}
-          {columns.map((col) => (
-            <label key={col.id} className="block">
-              <input
-                type="checkbox"
-                checked={visibleColumns[col.id]}
-                onChange={() => toggleColumnVisibility(col.id)}
-                className="mr-2"
-              />
-              {col.id}
-            </label>
-          ))}
-        </div>
-
+        ))}
+      </div>
+      {/* Contêiner de tabela com overflow-x-auto */}
+      <div className="overflow-x-auto">
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={columns.map((col) => col.id)}>
             <table className="w-max border-separate border-spacing-y-3">
@@ -478,7 +481,6 @@ export default function App() {
           </SortableContext>
         </DndContext>
       </div>
-
       {/* Paginador */}
       <div className="flex justify-between mt-4 items-center">
         <span>Total: {filteredData.length}</span>
@@ -531,7 +533,6 @@ export default function App() {
           </button>
         </div>
       </div>
-
       {isResizing && <div className="fixed inset-0 cursor-ew-resize z-50" />}
     </div>
   );
