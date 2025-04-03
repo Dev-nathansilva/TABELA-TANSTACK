@@ -14,6 +14,7 @@ export default function App() {
   const [columnFilters] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [enableResizing, setEnableResizing] = useState(false);
 
   const data = useMemo(
     () =>
@@ -31,7 +32,7 @@ export default function App() {
     () => [
       {
         id: "select",
-        enableResizing: false,
+        enableResizing,
         header: ({ table }) => (
           <input
             type="checkbox"
@@ -72,7 +73,7 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
-        enableResizing: true,
+        enableResizing,
         size: 150,
       },
       {
@@ -97,7 +98,7 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
-        enableResizing: true,
+        enableResizing,
         size: 200,
       },
       {
@@ -122,7 +123,7 @@ export default function App() {
           </button>
         ),
         enableSorting: true,
-        enableResizing: true,
+        enableResizing,
         size: 180,
       },
       {
@@ -152,11 +153,11 @@ export default function App() {
             <FiTrash2 className="cursor-pointer text-red-500" />
           </div>
         ),
-        enableResizing: false,
+        enableResizing,
         size: 150,
       },
     ],
-    []
+    [enableResizing]
   );
 
   const filteredData = useMemo(() => {
@@ -183,7 +184,7 @@ export default function App() {
       pagination,
     },
     onPaginationChange: setPagination,
-    enableColumnResizing: true,
+    enableColumnResizing: enableResizing,
     columnResizeMode: "onChange", // Certifique-se de usar 'onChange' para permitir ajustes independentes de cada coluna
   });
 
@@ -199,6 +200,20 @@ export default function App() {
     )
   );
   const endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMouseDown = (resizeHandler) => (event) => {
+    setIsResizing(true);
+    resizeHandler(event);
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    document.addEventListener("mouseup", handleMouseUp);
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow-lg relative">
@@ -263,6 +278,15 @@ export default function App() {
 
       {/* Contêiner de tabela com overflow-x-auto */}
       <div className="overflow-x-auto">
+        <label className="flex items-center gap-2 mb-4">
+          <input
+            type="checkbox"
+            checked={enableResizing}
+            onChange={() => setEnableResizing((prev) => !prev)}
+          />
+          Ativar Redimensionamento
+        </label>
+
         <table className="w-max border-separate border-spacing-y-3">
           <thead className="bg-white">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -281,10 +305,12 @@ export default function App() {
                     {/* Div para arrastar e redimensionar */}
                     {header.column.getCanResize() && (
                       <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-gray-50"
-                      />
+                        onMouseDown={handleMouseDown(header.getResizeHandler())}
+                        onTouchStart={handleMouseDown(
+                          header.getResizeHandler()
+                        )}
+                        className="absolute right-0 top-0 h-full w-3 cursor-ew-resize bg-gray-50"
+                      ></div>
                     )}
                   </th>
                 ))}
@@ -384,6 +410,8 @@ export default function App() {
           </button>
         </div>
       </div>
+
+      {isResizing && <div className="fixed inset-0 cursor-ew-resize z-50" />}
     </div>
   );
 }
