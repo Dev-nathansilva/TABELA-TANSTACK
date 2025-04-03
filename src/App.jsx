@@ -8,6 +8,9 @@ import {
   getSortedRowModel,
 } from "@tanstack/react-table";
 import { FiMail, FiEdit, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -15,6 +18,7 @@ export default function App() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [enableResizing, setEnableResizing] = useState(false);
+  const [enableDragging, setEnableDragging] = useState(false);
 
   const data = useMemo(
     () =>
@@ -28,137 +32,176 @@ export default function App() {
     []
   );
 
-  const columns = useMemo(
-    () => [
-      {
-        id: "select",
-        enableResizing,
-        header: ({ table }) => (
-          <input
-            type="checkbox"
-            className="w-4 h-4"
-            checked={table.getIsAllPageRowsSelected()}
-            onChange={table.getToggleAllPageRowsSelectedHandler()}
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            className="w-4 h-4"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        ),
-        size: 50,
-      },
-      {
-        accessorKey: "name",
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            Nome{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
-          </button>
-        ),
-        enableSorting: true,
-        enableResizing,
-        size: 150,
-      },
-      {
-        accessorKey: "cpf",
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            CPF / CNPJ{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
-          </button>
-        ),
-        enableSorting: true,
-        enableResizing,
-        size: 200,
-      },
-      {
-        accessorKey: "city",
-        header: ({ column }) => (
-          <button
-            className="flex items-center gap-1"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            Cidade{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
-          </button>
-        ),
-        enableSorting: true,
-        enableResizing,
-        size: 180,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        enableSorting: true,
-        enableResizing: true,
-        size: 100,
-        cell: ({ getValue }) => (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              getValue() === "Ativo"
-                ? "bg-green-100 text-green-600"
-                : "bg-red-100 text-red-600"
-            }`}
-          >
-            {getValue()}
-          </span>
-        ),
-      },
-      {
-        header: "Ações",
-        cell: () => (
-          <div className="flex gap-2 text-lg">
-            <FiMail className="cursor-pointer text-black" />
-            <FiEdit className="cursor-pointer text-orange-500" />
-            <FiTrash2 className="cursor-pointer text-red-500" />
-          </div>
-        ),
-        enableResizing,
-        size: 150,
-      },
-    ],
-    [enableResizing]
-  );
+  const [columns, setColumns] = useState([
+    {
+      id: "select",
+      enableResizing,
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          className="w-4 h-4"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          className="w-4 h-4"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+        />
+      ),
+      size: 50,
+    },
+    {
+      id: "name",
+      accessorKey: "name",
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-1"
+          onClick={() => {
+            if (column.getIsSorted() === "desc") {
+              column.clearSorting();
+            } else {
+              column.toggleSorting(column.getIsSorted() === "asc");
+            }
+          }}
+        >
+          Nome{" "}
+          {column.getIsSorted() === "asc"
+            ? "▲"
+            : column.getIsSorted() === "desc"
+            ? "▼"
+            : "↕"}
+        </button>
+      ),
+      enableSorting: true,
+      enableResizing: true,
+      size: 150,
+    },
+    {
+      id: "cpf",
+      accessorKey: "cpf",
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-1"
+          onClick={() => {
+            if (column.getIsSorted() === "desc") {
+              column.clearSorting();
+            } else {
+              column.toggleSorting(column.getIsSorted() === "asc");
+            }
+          }}
+        >
+          CPF / CNPJ{" "}
+          {column.getIsSorted() === "asc"
+            ? "▲"
+            : column.getIsSorted() === "desc"
+            ? "▼"
+            : "↕"}
+        </button>
+      ),
+      enableSorting: true,
+      enableResizing: true,
+      size: 200,
+    },
+    {
+      id: "city",
+      accessorKey: "city",
+      header: ({ column }) => (
+        <button
+          className="flex items-center gap-1"
+          onClick={() => {
+            if (column.getIsSorted() === "desc") {
+              column.clearSorting();
+            } else {
+              column.toggleSorting(column.getIsSorted() === "asc");
+            }
+          }}
+        >
+          Cidade{" "}
+          {column.getIsSorted() === "asc"
+            ? "▲"
+            : column.getIsSorted() === "desc"
+            ? "▼"
+            : "↕"}
+        </button>
+      ),
+      enableSorting: true,
+      enableResizing: true,
+      size: 140,
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: true,
+      enableResizing: true,
+      size: 140,
+      cell: ({ getValue }) => (
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            getValue() === "Ativo"
+              ? "bg-green-100 text-green-600"
+              : "bg-red-100 text-red-600"
+          }`}
+        >
+          {getValue()}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      accessorKey: "Ações",
+      header: "Ações",
+      cell: () => (
+        <div className="flex gap-2 text-lg">
+          <FiMail className="cursor-pointer text-black" />
+          <FiEdit className="cursor-pointer text-orange-500" />
+          <FiTrash2 className="cursor-pointer text-red-500" />
+        </div>
+      ),
+      enableResizing,
+      size: 150,
+    },
+  ]);
+
+  const onDragEnd = (event) => {
+    if (!enableDragging) return; // Impede a reordenação quando desativado
+
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setColumns((prev) => {
+      const oldIndex = prev.findIndex((col) => col.id === active.id);
+      const newIndex = prev.findIndex((col) => col.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
+  function DraggableHeader({ column }) {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+      useSortable({ id: column.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...(enableDragging ? { ...attributes, ...listeners } : {})} // Aplica listeners somente se enableDragging for true
+        className={`p-3 text-left font-semibold ${
+          enableDragging ? "cursor-move" : "cursor-default"
+        } bg-gray-100`}
+      >
+        {enableDragging ? "⠿ " : ""} {column.columnDef?.accessorKey}
+      </div>
+    );
+  }
 
   const filteredData = useMemo(() => {
     return selectedStatus
@@ -185,7 +228,7 @@ export default function App() {
     },
     onPaginationChange: setPagination,
     enableColumnResizing: enableResizing,
-    columnResizeMode: "onChange", // Certifique-se de usar 'onChange' para permitir ajustes independentes de cada coluna
+    columnResizeMode: "onChange",
   });
 
   const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
@@ -287,75 +330,102 @@ export default function App() {
           Ativar Redimensionamento
         </label>
 
-        <table className="w-max border-separate border-spacing-y-3">
-          <thead className="bg-white">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="p-3 text-left font-semibold relative"
-                    style={{ width: header.getSize() }}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+        <label className="flex items-center gap-2 mb-4">
+          <input
+            type="checkbox"
+            checked={enableDragging}
+            onChange={() => setEnableDragging((prev) => !prev)}
+          />
+          Ativar Reordenação de Colunas
+        </label>
 
-                    {/* Div para arrastar e redimensionar */}
-                    {header.column.getCanResize() && (
-                      <div
-                        onMouseDown={handleMouseDown(header.getResizeHandler())}
-                        onTouchStart={handleMouseDown(
-                          header.getResizeHandler()
+        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={columns.map((col) => col.id)}>
+            <table className="w-max border-separate border-spacing-y-3">
+              <thead className="bg-white">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className={`${
+                          enableDragging ? "" : "p-3"
+                        } text-left font-semibold relative`}
+                        style={{ width: header.getSize() }}
+                      >
+                        {enableDragging ? (
+                          <DraggableHeader column={header.column}>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </DraggableHeader>
+                        ) : (
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )
                         )}
-                        className="absolute right-0 top-0 h-full w-3 cursor-ew-resize bg-gray-50"
-                      ></div>
-                    )}
-                  </th>
+                        {/* Div para arrastar e redimensionar */}
+                        {header.column.getCanResize() && (
+                          <div
+                            onMouseDown={handleMouseDown(
+                              header.getResizeHandler()
+                            )}
+                            onTouchStart={handleMouseDown(
+                              header.getResizeHandler()
+                            )}
+                            className="absolute right-0 top-0 h-full w-3 cursor-ew-resize bg-gray-50"
+                          ></div>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </thead>
+              </thead>
 
-          <tbody>
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="p-4 text-center text-gray-500"
-                >
-                  Nenhum item encontrado
-                </td>
-              </tr>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`rounded-[100px] shadow-md ${
-                    row.getIsSelected() ? "bg-blue-100" : "bg-white"
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell, index, array) => (
+              <tbody>
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
                     <td
-                      key={cell.id}
-                      className={`p-4 text-left ${
-                        index === 0 ? "rounded-l-[100px]" : ""
-                      } ${
-                        index === array.length - 1 ? "rounded-r-[100px]" : ""
+                      colSpan={columns.length}
+                      className="p-4 text-center text-gray-500"
+                    >
+                      Nenhum item encontrado
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className={`rounded-[100px] shadow-md ${
+                        row.getIsSelected() ? "bg-blue-100" : "bg-white"
                       }`}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                      {row.getVisibleCells().map((cell, index, array) => (
+                        <td
+                          key={cell.id}
+                          className={`p-4 text-left ${
+                            index === 0 ? "rounded-l-[100px]" : ""
+                          } ${
+                            index === array.length - 1
+                              ? "rounded-r-[100px]"
+                              : ""
+                          }`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Paginador */}
