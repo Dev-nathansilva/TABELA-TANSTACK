@@ -214,9 +214,18 @@ export default function App() {
     pageSize: 5,
   });
 
+  const [visibleColumns, setVisibleColumns] = useState(
+    columns.reduce((acc, col) => ({ ...acc, [col.id]: true }), {})
+  );
+
+  const filteredColumns = useMemo(
+    () => columns.filter((col) => visibleColumns[col.id]),
+    [columns, visibleColumns]
+  );
+
   const table = useReactTable({
     data: filteredData,
-    columns,
+    columns: filteredColumns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -256,6 +265,13 @@ export default function App() {
     };
 
     document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const toggleColumnVisibility = (columnId) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnId]: !prev[columnId],
+    }));
   };
 
   return (
@@ -338,6 +354,21 @@ export default function App() {
           />
           Ativar Reordenação de Colunas
         </label>
+
+        <div className="mb-4">
+          <h3 className="font-semibold">Ocultar/Exibir Colunas</h3>
+          {columns.map((col) => (
+            <label key={col.id} className="block">
+              <input
+                type="checkbox"
+                checked={visibleColumns[col.id]}
+                onChange={() => toggleColumnVisibility(col.id)}
+                className="mr-2"
+              />
+              {col.id}
+            </label>
+          ))}
+        </div>
 
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={columns.map((col) => col.id)}>
