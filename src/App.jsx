@@ -13,11 +13,19 @@ import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect } from "react";
 import {
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
+} from "react-icons/md";
+
+import {
   BsChevronExpand,
   BsFillCaretUpFill,
   BsFillCaretDownFill,
 } from "react-icons/bs";
 import { LuListFilter } from "react-icons/lu";
+import { IoBrowsersOutline } from "react-icons/io5";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -569,21 +577,24 @@ export default function App() {
       </div>
       {/* Paginador */}
       <div className="flex justify-between mt-4 items-center">
-        <span>Total: {filteredData.length}</span>
+        <span className="flex items-center gap-1.5 bg-gray-100 border border-gray-400 p-2 rounded-2xl">
+          <IoBrowsersOutline />
+          Total: {filteredData.length}
+        </span>
         <div className="flex gap-2">
           <button
             onClick={() => setPagination((prev) => ({ ...prev, pageIndex: 0 }))}
             disabled={pagination.pageIndex === 0}
             className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
           >
-            «
+            <MdKeyboardDoubleArrowLeft />
           </button>
           <button
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
           >
-            ←
+            <MdKeyboardArrowLeft />
           </button>
           {Array.from(
             { length: endPage - startPage + 1 },
@@ -595,7 +606,9 @@ export default function App() {
                 setPagination((prev) => ({ ...prev, pageIndex: page - 1 }))
               }
               className={`px-3 py-1 rounded-md ${
-                currentPage === page ? "bg-blue-500 text-white" : "bg-gray-200"
+                currentPage === page
+                  ? "bg-black text-white"
+                  : "bg-gray-100 border border-gray-300"
               }`}
             >
               {page}
@@ -606,7 +619,7 @@ export default function App() {
             disabled={!table.getCanNextPage()}
             className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
           >
-            →
+            <MdKeyboardArrowRight />
           </button>
           <button
             onClick={() =>
@@ -615,7 +628,7 @@ export default function App() {
             disabled={pagination.pageIndex === totalPages - 1}
             className="px-3 py-1 bg-gray-200 rounded-md disabled:opacity-50"
           >
-            »
+            <MdKeyboardDoubleArrowRight />
           </button>
         </div>
       </div>
