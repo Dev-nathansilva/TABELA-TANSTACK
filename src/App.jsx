@@ -12,6 +12,7 @@ import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect } from "react";
+import { CgArrowsV } from "react-icons/cg";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -471,7 +472,7 @@ export default function App() {
                       <th
                         key={header.id}
                         className={`${
-                          enableDragging ? "" : "p-3"
+                          enableDragging ? "" : "p-4"
                         } text-left font-semibold relative`}
                         style={{ width: header.getSize() }}
                       >
@@ -497,7 +498,11 @@ export default function App() {
                             onTouchStart={handleMouseDown(
                               header.getResizeHandler()
                             )}
-                            className="absolute right-0 top-0  w-[3px] h-6 cursor-ew-resize bg-[#dcdcdc] rounded-4xl translate-y-1/2"
+                            className="absolute right-0 w-[3px] h-6 cursor-ew-resize bg-[#dcdcdc] rounded-4xl"
+                            style={{
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                            }}
                           ></div>
                         )}
                       </th>
