@@ -203,8 +203,10 @@ export default function App() {
           <div className="relative gap-3 flex items-center">
             <span>Status</span>
             <div
-              className={`filter-icon p-1 rounded-[4px] hover:bg-gray-300 ${
-                isAnyStatusSelected ? "bg-blue-200" : "bg-gray-100"
+              className={`filter-icon p-1 rounded-[4px]  ${
+                isAnyStatusSelected
+                  ? "bg-blue-200"
+                  : "bg-gray-100 hover:bg-gray-300"
               }`}
             >
               <LuListFilter
@@ -278,7 +280,13 @@ export default function App() {
     return columnOrder
       .map((colId) => baseColumns.find((col) => col.id === colId))
       .filter(Boolean);
-  }, [columnOrder, enableResizing, selectedStatus, isFilterOpen]);
+  }, [
+    columnOrder,
+    enableResizing,
+    selectedStatus,
+    isFilterOpen,
+    isAnyStatusSelected,
+  ]);
 
   const onDragEnd = (event) => {
     if (!enableDragging) return;
@@ -318,7 +326,7 @@ export default function App() {
         {...(enableDragging ? { ...attributes, ...listeners } : {})} // Aplica listeners somente se enableDragging for true
         className={`px-3 py-4  text-left font-semibold border border-gray-200  ${
           enableDragging ? "cursor-move" : "cursor-default"
-        } bg-gray-100`}
+        } bg-[#f9f9f9]`}
       >
         {enableDragging ? "⠿ " : ""} {column.columnDef?.accessorKey}
       </div>
@@ -461,7 +469,7 @@ export default function App() {
         <div className="relative inline-block">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            className="px-4 py-2 bg-black text-white rounded-md"
           >
             Ocultar/Exibir Colunas
           </button>
