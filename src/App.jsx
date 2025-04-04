@@ -30,7 +30,8 @@ import { IoBrowsersOutline } from "react-icons/io5";
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState([]);
+  const isAnyStatusSelected = selectedStatus.length > 0;
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [enableResizing, setEnableResizing] = useState(false);
   const [enableDragging, setEnableDragging] = useState(false);
@@ -201,9 +202,15 @@ export default function App() {
         header: () => (
           <div className="relative gap-3 flex items-center">
             <span>Status</span>
-            <div className="filter-icon bg-gray-100 p-1 rounded-[4px] hover:bg-gray-300 ">
+            <div
+              className={`filter-icon p-1 rounded-[4px] hover:bg-gray-300 ${
+                isAnyStatusSelected ? "bg-blue-200" : "bg-gray-100"
+              }`}
+            >
               <LuListFilter
-                className=" cursor-pointer text-black"
+                className={`cursor-pointer ${
+                  isAnyStatusSelected ? "text-blue-900" : "text-black"
+                }`}
                 onClick={() => setIsFilterOpen((prev) => !prev)}
               />
             </div>
@@ -215,15 +222,24 @@ export default function App() {
                 <h2 className="text-sm font-semibold mb-2">
                   Filtrar por Status
                 </h2>
-                <select
-                  className="w-full p-2 border rounded text-sm"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="Ativo">Ativo</option>
-                  <option value="Inativo">Inativo</option>
-                </select>
+                <div className="flex flex-col gap-2 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatus.includes("Ativo")}
+                      onChange={() => handleStatusChange("Ativo")}
+                    />
+                    Ativo
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatus.includes("Inativo")}
+                      onChange={() => handleStatusChange("Inativo")}
+                    />
+                    Inativo
+                  </label>
+                </div>
               </div>
             )}
           </div>
@@ -277,6 +293,15 @@ export default function App() {
     });
   };
 
+  const handleStatusChange = (status) => {
+    setSelectedStatus(
+      (prev) =>
+        prev.includes(status)
+          ? prev.filter((s) => s !== status) // remove
+          : [...prev, status] // adiciona
+    );
+  };
+
   function DraggableHeader({ column }) {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: column.id });
@@ -301,8 +326,8 @@ export default function App() {
   }
 
   const filteredData = useMemo(() => {
-    return selectedStatus
-      ? data.filter((row) => row.status === selectedStatus)
+    return selectedStatus.length > 0
+      ? data.filter((row) => selectedStatus.includes(row.status))
       : data;
   }, [data, selectedStatus]);
 
