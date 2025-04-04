@@ -12,7 +12,12 @@ import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useEffect } from "react";
-import { CgArrowsV } from "react-icons/cg";
+import {
+  BsChevronExpand,
+  BsFillCaretUpFill,
+  BsFillCaretDownFill,
+} from "react-icons/bs";
+import { LuListFilter } from "react-icons/lu";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -103,7 +108,7 @@ export default function App() {
         accessorKey: "name",
         header: ({ column }) => (
           <button
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 cursor-pointer"
             onClick={() => {
               if (column.getIsSorted() === "desc") {
                 column.clearSorting();
@@ -113,11 +118,13 @@ export default function App() {
             }}
           >
             Nome{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
+            {column.getIsSorted() === "asc" ? (
+              <BsFillCaretUpFill />
+            ) : column.getIsSorted() === "desc" ? (
+              <BsFillCaretDownFill />
+            ) : (
+              <BsChevronExpand />
+            )}
           </button>
         ),
         enableSorting: true,
@@ -129,7 +136,7 @@ export default function App() {
         accessorKey: "cpf",
         header: ({ column }) => (
           <button
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 cursor-pointer"
             onClick={() => {
               if (column.getIsSorted() === "desc") {
                 column.clearSorting();
@@ -139,11 +146,13 @@ export default function App() {
             }}
           >
             CPF / CNPJ{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
+            {column.getIsSorted() === "asc" ? (
+              <BsFillCaretUpFill />
+            ) : column.getIsSorted() === "desc" ? (
+              <BsFillCaretDownFill />
+            ) : (
+              <BsChevronExpand />
+            )}
           </button>
         ),
         enableSorting: true,
@@ -155,7 +164,7 @@ export default function App() {
         accessorKey: "city",
         header: ({ column }) => (
           <button
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 cursor-pointer"
             onClick={() => {
               if (column.getIsSorted() === "desc") {
                 column.clearSorting();
@@ -165,11 +174,13 @@ export default function App() {
             }}
           >
             Cidade{" "}
-            {column.getIsSorted() === "asc"
-              ? "▲"
-              : column.getIsSorted() === "desc"
-              ? "▼"
-              : "↕"}
+            {column.getIsSorted() === "asc" ? (
+              <BsFillCaretUpFill />
+            ) : column.getIsSorted() === "desc" ? (
+              <BsFillCaretDownFill />
+            ) : (
+              <BsChevronExpand />
+            )}
           </button>
         ),
         enableSorting: true,
@@ -180,12 +191,14 @@ export default function App() {
         id: "status",
         accessorKey: "status",
         header: () => (
-          <div className="relative flex items-center">
+          <div className="relative gap-3 flex items-center">
             <span>Status</span>
-            <FiFilter
-              className="ml-2 cursor-pointer text-gray-400"
-              onClick={() => setIsFilterOpen((prev) => !prev)}
-            />
+            <div className="filter-icon bg-gray-100 p-1 rounded-[4px] hover:bg-gray-300 ">
+              <LuListFilter
+                className=" cursor-pointer text-black"
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+              />
+            </div>
             {isFilterOpen && (
               <div
                 ref={filterRef}
@@ -270,7 +283,7 @@ export default function App() {
         ref={setNodeRef}
         style={style}
         {...(enableDragging ? { ...attributes, ...listeners } : {})} // Aplica listeners somente se enableDragging for true
-        className={`p-3 text-left font-semibold ${
+        className={`px-3 py-4  text-left font-semibold border border-gray-200  ${
           enableDragging ? "cursor-move" : "cursor-default"
         } bg-gray-100`}
       >
@@ -473,7 +486,7 @@ export default function App() {
                         key={header.id}
                         className={`${
                           enableDragging ? "" : "p-4"
-                        } text-left font-semibold relative`}
+                        } text-left font-semibold relative first:rounded-l-[10px] last:rounded-r-[10px]`}
                         style={{ width: header.getSize() }}
                       >
                         {enableDragging ? (
@@ -498,7 +511,7 @@ export default function App() {
                             onTouchStart={handleMouseDown(
                               header.getResizeHandler()
                             )}
-                            className="absolute right-0 w-[3px] h-6 cursor-ew-resize bg-[#dcdcdc] rounded-4xl"
+                            className="absolute right-0 w-[3px] h-6 cursor-ew-resize bg-[#dcdcdc] rounded-4xl mr-1"
                             style={{
                               top: "50%",
                               transform: "translateY(-50%)",
@@ -525,19 +538,19 @@ export default function App() {
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className={`rounded-[100px] shadow-md ${
-                        row.getIsSelected() ? "bg-blue-100" : "bg-white"
+                      className={`rounded-[10px] shadow-xs  ${
+                        row.getIsSelected()
+                          ? "bg-blue-100"
+                          : "bg-white hover:bg-gray-100"
                       }`}
                     >
                       {row.getVisibleCells().map((cell, index, array) => (
                         <td
                           key={cell.id}
-                          className={`p-4 text-left ${
-                            index === 0 ? "rounded-l-[100px]" : ""
+                          className={`p-4 text-left border border-gray-50 ${
+                            index === 0 ? "rounded-l-[10px]" : ""
                           } ${
-                            index === array.length - 1
-                              ? "rounded-r-[100px]"
-                              : ""
+                            index === array.length - 1 ? "rounded-r-[10px]" : ""
                           }`}
                         >
                           {flexRender(
