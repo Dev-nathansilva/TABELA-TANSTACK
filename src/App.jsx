@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -11,6 +11,7 @@ import { FiMail, FiEdit, FiTrash2, FiSearch, FiFilter } from "react-icons/fi";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useEffect } from "react";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -19,6 +20,37 @@ export default function App() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [enableResizing, setEnableResizing] = useState(false);
   const [enableDragging, setEnableDragging] = useState(false);
+  const filterRef = useRef(null);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const popupRef = useRef(null);
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  // Fecha o popup se clicar fora
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const data = useMemo(
     () =>
@@ -32,152 +64,194 @@ export default function App() {
     []
   );
 
-  const [columns, setColumns] = useState([
-    {
-      id: "select",
-      accessorKey: "⬜",
-      enableResizing,
-      header: ({ table }) => (
-        <input
-          type="checkbox"
-          className="w-4 h-4"
-          checked={table.getIsAllPageRowsSelected()}
-          onChange={table.getToggleAllPageRowsSelectedHandler()}
-        />
-      ),
-      cell: ({ row }) => (
-        <input
-          type="checkbox"
-          className="w-4 h-4"
-          checked={row.getIsSelected()}
-          onChange={row.getToggleSelectedHandler()}
-        />
-      ),
-      size: 70,
-    },
-    {
-      id: "name",
-      accessorKey: "name",
-      header: ({ column }) => (
-        <button
-          className="flex items-center gap-1"
-          onClick={() => {
-            if (column.getIsSorted() === "desc") {
-              column.clearSorting();
-            } else {
-              column.toggleSorting(column.getIsSorted() === "asc");
-            }
-          }}
-        >
-          Nome{" "}
-          {column.getIsSorted() === "asc"
-            ? "▲"
-            : column.getIsSorted() === "desc"
-            ? "▼"
-            : "↕"}
-        </button>
-      ),
-      enableSorting: true,
-      enableResizing: true,
-      size: 150,
-    },
-    {
-      id: "cpf",
-      accessorKey: "cpf",
-      header: ({ column }) => (
-        <button
-          className="flex items-center gap-1"
-          onClick={() => {
-            if (column.getIsSorted() === "desc") {
-              column.clearSorting();
-            } else {
-              column.toggleSorting(column.getIsSorted() === "asc");
-            }
-          }}
-        >
-          CPF / CNPJ{" "}
-          {column.getIsSorted() === "asc"
-            ? "▲"
-            : column.getIsSorted() === "desc"
-            ? "▼"
-            : "↕"}
-        </button>
-      ),
-      enableSorting: true,
-      enableResizing: true,
-      size: 200,
-    },
-    {
-      id: "city",
-      accessorKey: "city",
-      header: ({ column }) => (
-        <button
-          className="flex items-center gap-1"
-          onClick={() => {
-            if (column.getIsSorted() === "desc") {
-              column.clearSorting();
-            } else {
-              column.toggleSorting(column.getIsSorted() === "asc");
-            }
-          }}
-        >
-          Cidade{" "}
-          {column.getIsSorted() === "asc"
-            ? "▲"
-            : column.getIsSorted() === "desc"
-            ? "▼"
-            : "↕"}
-        </button>
-      ),
-      enableSorting: true,
-      enableResizing: true,
-      size: 140,
-    },
-    {
-      id: "status",
-      accessorKey: "status",
-      header: "Status",
-      enableSorting: true,
-      enableResizing: true,
-      size: 140,
-      cell: ({ getValue }) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            getValue() === "Ativo"
-              ? "bg-green-100 text-green-600"
-              : "bg-red-100 text-red-600"
-          }`}
-        >
-          {getValue()}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      accessorKey: "Ações",
-      header: "Ações",
-      cell: () => (
-        <div className="flex gap-2 text-lg">
-          <FiMail className="cursor-pointer text-black" />
-          <FiEdit className="cursor-pointer text-orange-500" />
-          <FiTrash2 className="cursor-pointer text-red-500" />
-        </div>
-      ),
-      enableResizing,
-      size: 140,
-    },
+  const [columnOrder, setColumnOrder] = useState([
+    "select",
+    "name",
+    "cpf",
+    "city",
+    "status",
+    "actions",
   ]);
 
+  const columns = useMemo(() => {
+    const baseColumns = [
+      {
+        id: "select",
+        accessorKey: "⬜",
+        enableResizing,
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="w-4 h-4"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            className="w-4 h-4"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
+        size: 70,
+      },
+      {
+        id: "name",
+        accessorKey: "name",
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1"
+            onClick={() => {
+              if (column.getIsSorted() === "desc") {
+                column.clearSorting();
+              } else {
+                column.toggleSorting(column.getIsSorted() === "asc");
+              }
+            }}
+          >
+            Nome{" "}
+            {column.getIsSorted() === "asc"
+              ? "▲"
+              : column.getIsSorted() === "desc"
+              ? "▼"
+              : "↕"}
+          </button>
+        ),
+        enableSorting: true,
+        enableResizing: true,
+        size: 150,
+      },
+      {
+        id: "cpf",
+        accessorKey: "cpf",
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1"
+            onClick={() => {
+              if (column.getIsSorted() === "desc") {
+                column.clearSorting();
+              } else {
+                column.toggleSorting(column.getIsSorted() === "asc");
+              }
+            }}
+          >
+            CPF / CNPJ{" "}
+            {column.getIsSorted() === "asc"
+              ? "▲"
+              : column.getIsSorted() === "desc"
+              ? "▼"
+              : "↕"}
+          </button>
+        ),
+        enableSorting: true,
+        enableResizing: true,
+        size: 200,
+      },
+      {
+        id: "city",
+        accessorKey: "city",
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1"
+            onClick={() => {
+              if (column.getIsSorted() === "desc") {
+                column.clearSorting();
+              } else {
+                column.toggleSorting(column.getIsSorted() === "asc");
+              }
+            }}
+          >
+            Cidade{" "}
+            {column.getIsSorted() === "asc"
+              ? "▲"
+              : column.getIsSorted() === "desc"
+              ? "▼"
+              : "↕"}
+          </button>
+        ),
+        enableSorting: true,
+        enableResizing: true,
+        size: 140,
+      },
+      {
+        id: "status",
+        accessorKey: "status",
+        header: () => (
+          <div className="relative flex items-center">
+            <span>Status</span>
+            <FiFilter
+              className="ml-2 cursor-pointer text-gray-400"
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+            />
+            {isFilterOpen && (
+              <div
+                ref={filterRef}
+                className="absolute top-9 w-52 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
+              >
+                <h2 className="text-sm font-semibold mb-2">
+                  Filtrar por Status
+                </h2>
+                <select
+                  className="w-full p-2 border rounded text-sm"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+              </div>
+            )}
+          </div>
+        ),
+        enableSorting: true,
+        enableResizing: true,
+        size: 140,
+        cell: ({ getValue }) => (
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              getValue() === "Ativo"
+                ? "bg-green-100 text-green-600"
+                : "bg-red-100 text-red-600"
+            }`}
+          >
+            {getValue()}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        accessorKey: "Ações",
+        header: "Ações",
+        cell: () => (
+          <div className="flex gap-2 text-lg">
+            <FiMail className="cursor-pointer text-black" />
+            <FiEdit className="cursor-pointer text-orange-500" />
+            <FiTrash2 className="cursor-pointer text-red-500" />
+          </div>
+        ),
+        enableResizing,
+        size: 140,
+      },
+    ];
+
+    return columnOrder
+      .map((colId) => baseColumns.find((col) => col.id === colId))
+      .filter(Boolean);
+  }, [columnOrder, enableResizing, selectedStatus, isFilterOpen]);
+
   const onDragEnd = (event) => {
-    if (!enableDragging) return; // Impede a reordenação quando desativado
+    if (!enableDragging) return;
 
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    setColumns((prev) => {
-      const oldIndex = prev.findIndex((col) => col.id === active.id);
-      const newIndex = prev.findIndex((col) => col.id === over.id);
-      return arrayMove(prev, oldIndex, newIndex);
+    setColumnOrder((prevOrder) => {
+      const oldIndex = prevOrder.indexOf(active.id);
+      const newIndex = prevOrder.indexOf(over.id);
+      return arrayMove(prevOrder, oldIndex, newIndex);
     });
   };
 
@@ -277,42 +351,20 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow-lg relative">
-      <div className="flex items-center bg-white rounded-md shadow p-3 mb-4">
-        <FiSearch className="text-gray-400 mr-2" />
-        <input
-          type="text"
-          placeholder="Pesquisar..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="w-full focus:outline-none"
-        />
-        <FiFilter
-          className="text-gray-400 ml-2 cursor-pointer"
-          onClick={() => setIsFilterOpen(true)}
-        />
-      </div>
-      {isFilterOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Filtrar por Status</h2>
-            <select
-              className="w-full p-2 border rounded"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="Ativo">Ativo</option>
-              <option value="Inativo">Inativo</option>
-            </select>
-            <button
-              className="mt-4 w-full bg-blue-500 text-white p-2 rounded"
-              onClick={() => setIsFilterOpen(false)}
-            >
-              Aplicar
-            </button>
-          </div>
+      <div className="relative">
+        {/* CAMPO DE PESQUISA */}
+        <div className="flex items-center bg-white rounded-md shadow p-3 mb-4">
+          <FiSearch className="text-gray-400 mr-2" />
+          <input
+            type="text"
+            placeholder="Pesquisar..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full focus:outline-none"
+          />
         </div>
-      )}
+      </div>
+
       <div className="mb-2">
         <label>Itens por página: </label>
         <select
@@ -334,11 +386,12 @@ export default function App() {
         </select>
       </div>
 
-      <div className="flex gap-10">
+      {/* FUNCIONALIDADES */}
+      <div className="flex gap-10 my-5 items-center">
         {/* Redimensionamento */}
         <div className="flex gap-1.5">
           <input
-            class="switch"
+            className="switch"
             type="checkbox"
             checked={enableResizing}
             onChange={() => setEnableResizing((prev) => !prev)}
@@ -349,48 +402,63 @@ export default function App() {
         {/* Reordenação */}
         <div className="flex gap-1.5">
           <input
-            class="switch"
+            className="switch"
             type="checkbox"
             checked={enableDragging}
             onChange={() => setEnableDragging((prev) => !prev)}
           />
           Ativar Reordenação de Colunas
         </div>
-      </div>
-      <div className="mb-4">
-        <h3 className="font-semibold">Ocultar/Exibir Colunas</h3>
 
-        {/* Checkbox para selecionar/desmarcar todas as colunas */}
-        <label className="block font-medium mb-2">
-          <input
-            type="checkbox"
-            checked={Object.values(visibleColumns).every(Boolean)} // Verifica se todas as colunas estão marcadas
-            onChange={(e) => {
-              const isChecked = e.target.checked;
-              const updatedColumns = {};
-              columns.forEach((col) => {
-                updatedColumns[col.id] = isChecked;
-              });
-              setVisibleColumns(updatedColumns); // Atualiza o estado de todas as colunas
-            }}
-            className="mr-2"
-          />
-          Selecionar/Desmarcar Tudo
-        </label>
+        {/* OCULTAR / EXIBIR */}
+        <div className="relative inline-block">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
+          >
+            Ocultar/Exibir Colunas
+          </button>
 
-        {/* Checkboxes individuais para cada coluna */}
-        {columns.map((col) => (
-          <label key={col.id} className="block">
-            <input
-              type="checkbox"
-              checked={visibleColumns[col.id]}
-              onChange={() => toggleColumnVisibility(col.id)}
-              className="mr-2"
-            />
-            {col.id}
-          </label>
-        ))}
+          {isOpen && (
+            <div
+              ref={popupRef}
+              className="absolute z-[1000] left-0 mt-2 w-64 bg-white border border-gray-300 shadow-lg rounded-md p-4"
+            >
+              {/* Checkbox para selecionar/desmarcar todas as colunas */}
+              <label className="block font-medium mb-2">
+                <input
+                  type="checkbox"
+                  checked={Object.values(visibleColumns).every(Boolean)}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    const updatedColumns = {};
+                    columns.forEach((col) => {
+                      updatedColumns[col.id] = isChecked;
+                    });
+                    setVisibleColumns(updatedColumns);
+                  }}
+                  className="mr-2"
+                />
+                Selecionar/Desmarcar Tudo
+              </label>
+
+              {/* Checkboxes individuais para cada coluna */}
+              {columns.map((col) => (
+                <label key={col.id} className="block">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[col.id]}
+                    onChange={() => toggleColumnVisibility(col.id)}
+                    className="mr-2"
+                  />
+                  {col.id}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
       {/* Contêiner de tabela com overflow-x-auto */}
       <div className="overflow-x-auto">
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -429,7 +497,7 @@ export default function App() {
                             onTouchStart={handleMouseDown(
                               header.getResizeHandler()
                             )}
-                            className="absolute right-0 top-0 h-full w-3 cursor-ew-resize bg-gray-50"
+                            className="absolute right-0 top-0  w-[3px] h-6 cursor-ew-resize bg-[#dcdcdc] rounded-4xl translate-y-1/2"
                           ></div>
                         )}
                       </th>
