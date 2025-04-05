@@ -26,6 +26,7 @@ import {
 } from "react-icons/bs";
 import { LuListFilter } from "react-icons/lu";
 import { IoBrowsersOutline } from "react-icons/io5";
+import { IoIosArrowForward } from "react-icons/io";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -36,6 +37,8 @@ export default function App() {
   const [enableResizing, setEnableResizing] = useState(false);
   const [enableDragging, setEnableDragging] = useState(false);
   const filterRef = useRef(null);
+  const [isFuncPopupOpen, setIsFuncPopupOpen] = useState(false);
+  const funcPopupRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef(null);
@@ -93,6 +96,25 @@ export default function App() {
 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        funcPopupRef.current &&
+        !funcPopupRef.current.contains(event.target)
+      ) {
+        setIsFuncPopupOpen(false);
+      }
+    }
+
+    if (isFuncPopupOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isFuncPopupOpen]);
 
   // Fecha o popup se clicar fora
   useEffect(() => {
@@ -446,9 +468,9 @@ export default function App() {
 
   return (
     <div className="p-6 max-w-[80%] mx-auto bg-gray-50 rounded-lg shadow-lg relative">
-      <div className="relative">
+      <div className="relative flex gap-3 items-center">
         {/* CAMPO DE PESQUISA */}
-        <div className="flex items-center bg-white rounded-md shadow p-3 mb-4">
+        <div className="w-[50%] flex items-center bg-white rounded-md shadow p-3">
           <FiSearch className="text-gray-400 mr-2" />
           <input
             type="text"
@@ -458,9 +480,18 @@ export default function App() {
             className="w-full focus:outline-none"
           />
         </div>
+        <button className="px-4 py-3 bg-black text-white rounded-md">
+          Filtros
+        </button>
+        <button
+          className="px-4 py-3 bg-black text-white rounded-md"
+          onClick={() => setIsFuncPopupOpen((prev) => !prev)}
+        >
+          Funcionalidades
+        </button>
       </div>
 
-      <div className="mb-2">
+      <div className="mb-2 mr-4 flex items-center justify-end gap-2">
         <label>Itens por página: </label>
         <select
           value={pagination.pageSize}
@@ -481,78 +512,90 @@ export default function App() {
         </select>
       </div>
 
-      {/* FUNCIONALIDADES */}
-      <div className="flex gap-10 my-5 items-center">
-        {/* Redimensionamento */}
-        <div className="flex gap-1.5">
-          <input
-            className="switch"
-            type="checkbox"
-            checked={enableResizing}
-            onChange={() => setEnableResizing((prev) => !prev)}
-          />
-          Redimensionamento
-        </div>
+      {isFuncPopupOpen && (
+        <div
+          ref={funcPopupRef}
+          className="absolute z-[1000] top-24 left-1/2 -translate-x-1/2 w-[500px] bg-white border border-gray-300 shadow-xl rounded-lg p-6"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Funcionalidades</h2>
+            <button onClick={() => setIsFuncPopupOpen(false)}>✖</button>
+          </div>
 
-        {/* Reordenação */}
-        <div className="flex gap-1.5">
-          <input
-            className="switch"
-            type="checkbox"
-            checked={enableDragging}
-            onChange={() => setEnableDragging((prev) => !prev)}
-          />
-          Ativar Reordenação de Colunas
-        </div>
-
-        {/* OCULTAR / EXIBIR */}
-        <div className="relative inline-block">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="px-4 py-2 bg-black text-white rounded-md"
-          >
-            Ocultar/Exibir Colunas
-          </button>
-
-          {isOpen && (
-            <div
-              ref={popupRef}
-              className="absolute z-[1000] left-0 mt-2 w-64 bg-white border border-gray-300 shadow-lg rounded-md p-4"
-            >
-              {/* Checkbox para selecionar/desmarcar todas as colunas */}
-              <label className="block font-medium mb-2">
-                <input
-                  type="checkbox"
-                  checked={Object.values(visibleColumns).every(Boolean)}
-                  onChange={(e) => {
-                    const isChecked = e.target.checked;
-                    const updatedColumns = {};
-                    columns.forEach((col) => {
-                      updatedColumns[col.id] = isChecked;
-                    });
-                    setVisibleColumns(updatedColumns);
-                  }}
-                  className="mr-2"
-                />
-                Selecionar/Desmarcar Tudo
-              </label>
-
-              {/* Checkboxes individuais para cada coluna */}
-              {columns.map((col) => (
-                <label key={col.id} className="block">
-                  <input
-                    type="checkbox"
-                    checked={visibleColumns[col.id]}
-                    onChange={() => toggleColumnVisibility(col.id)}
-                    className="mr-2"
-                  />
-                  {col.id}
-                </label>
-              ))}
+          {/* Conteúdo de funcionalidades aqui */}
+          <div className="flex flex-col gap-4">
+            {/* Redimensionamento */}
+            <div className="flex gap-2 items-center">
+              <input
+                className="switch"
+                type="checkbox"
+                checked={enableResizing}
+                onChange={() => setEnableResizing((prev) => !prev)}
+              />
+              <span>Redimensionamento</span>
             </div>
-          )}
+
+            {/* Reordenação */}
+            <div className="flex gap-2 items-center">
+              <input
+                className="switch"
+                type="checkbox"
+                checked={enableDragging}
+                onChange={() => setEnableDragging((prev) => !prev)}
+              />
+              <span>Ativar Reordenação de Colunas</span>
+            </div>
+
+            {/* OCULTAR / EXIBIR */}
+            <div className="relative inline-block">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-3 px-4 py-2 bg-black text-white rounded-md"
+              >
+                Ocultar/Exibir Colunas <IoIosArrowForward />
+              </button>
+
+              {isOpen && (
+                <div
+                  ref={popupRef}
+                  className="absolute z-[1000] mr-[-33px] right-0 top-0 w-64 bg-white border border-gray-300 shadow-lg rounded-md p-4"
+                >
+                  {/* Checkbox para selecionar/desmarcar todas as colunas */}
+                  <label className="block font-medium mb-2">
+                    <input
+                      type="checkbox"
+                      checked={Object.values(visibleColumns).every(Boolean)}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        const updatedColumns = {};
+                        columns.forEach((col) => {
+                          updatedColumns[col.id] = isChecked;
+                        });
+                        setVisibleColumns(updatedColumns);
+                      }}
+                      className="mr-2"
+                    />
+                    Selecionar/Desmarcar Tudo
+                  </label>
+
+                  {/* Checkboxes individuais para cada coluna */}
+                  {columns.map((col) => (
+                    <label key={col.id} className="block">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[col.id]}
+                        onChange={() => toggleColumnVisibility(col.id)}
+                        className="mr-2"
+                      />
+                      {col.id}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Contêiner de tabela com overflow-x-auto */}
       <div className="overflow-x-auto">
