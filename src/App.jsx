@@ -39,6 +39,45 @@ export default function App() {
 
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef(null);
+
+  const [columnSizes, setColumnSizes] = useState({});
+
+  useEffect(() => {
+    const updateSizes = () => {
+      const width = window.innerWidth;
+
+      if (width < 640) {
+        setColumnSizes({
+          name: 100,
+          cpf: 120,
+          city: 100,
+          status: 80,
+          actions: 100,
+        });
+      } else if (width < 1550) {
+        setColumnSizes({
+          name: 250,
+          cpf: 270,
+          city: 240,
+          status: 200,
+          actions: 130,
+        });
+      } else {
+        setColumnSizes({
+          name: 480,
+          cpf: 300,
+          city: 300,
+          status: 180,
+          actions: 150,
+        });
+      }
+    };
+
+    updateSizes(); // chama uma vez ao montar
+    window.addEventListener("resize", updateSizes); // escuta alterações
+    return () => window.removeEventListener("resize", updateSizes); // limpa
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -138,7 +177,7 @@ export default function App() {
         ),
         enableSorting: true,
         enableResizing: true,
-        size: 150,
+        size: columnSizes["name"] || 150,
       },
       {
         id: "cpf",
@@ -166,7 +205,7 @@ export default function App() {
         ),
         enableSorting: true,
         enableResizing: true,
-        size: 200,
+        size: columnSizes["cpf"] || 150,
       },
       {
         id: "city",
@@ -194,7 +233,7 @@ export default function App() {
         ),
         enableSorting: true,
         enableResizing: true,
-        size: 140,
+        size: columnSizes["city"] || 150,
       },
       {
         id: "status",
@@ -248,7 +287,7 @@ export default function App() {
         ),
         enableSorting: true,
         enableResizing: true,
-        size: 140,
+        size: columnSizes["status"] || 150,
         cell: ({ getValue }) => (
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -273,7 +312,7 @@ export default function App() {
           </div>
         ),
         enableResizing,
-        size: 140,
+        size: columnSizes["actions"] || 150,
       },
     ];
 
@@ -286,6 +325,7 @@ export default function App() {
     selectedStatus,
     isFilterOpen,
     isAnyStatusSelected,
+    columnSizes,
   ]);
 
   const onDragEnd = (event) => {
@@ -405,7 +445,7 @@ export default function App() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-50 rounded-lg shadow-lg relative">
+    <div className="p-6 max-w-[80%] mx-auto bg-gray-50 rounded-lg shadow-lg relative">
       <div className="relative">
         {/* CAMPO DE PESQUISA */}
         <div className="flex items-center bg-white rounded-md shadow p-3 mb-4">
@@ -518,7 +558,7 @@ export default function App() {
       <div className="overflow-x-auto">
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={columns.map((col) => col.id)}>
-            <table className="w-max border-separate border-spacing-y-3">
+            <table className=" table-fixed  border-separate border-spacing-y-3">
               <thead className="bg-white">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
@@ -528,7 +568,11 @@ export default function App() {
                         className={`${
                           enableDragging ? "" : "p-4"
                         } text-left font-semibold relative first:rounded-l-[10px] last:rounded-r-[10px]`}
-                        style={{ width: header.getSize() }}
+                        style={{
+                          minWidth: header.getSize(),
+                          width: header.getSize(),
+                          maxWidth: header.getSize(),
+                        }}
                       >
                         {enableDragging ? (
                           <DraggableHeader column={header.column}>
