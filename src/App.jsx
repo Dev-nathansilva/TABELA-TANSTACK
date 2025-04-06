@@ -33,17 +33,36 @@ export default function App() {
   const [columnFilters] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState([]);
   const isAnyStatusSelected = selectedStatus.length > 0;
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [enableResizing, setEnableResizing] = useState(false);
   const [enableDragging, setEnableDragging] = useState(false);
-  const filterRef = useRef(null);
-  const [isFuncPopupOpen, setIsFuncPopupOpen] = useState(false);
-  const funcPopupRef = useRef(null);
-
-  const [isOpen, setIsOpen] = useState(false);
-  const popupRef = useRef(null);
-
   const [columnSizes, setColumnSizes] = useState({});
+
+  const [popupStates, setPopupStates] = useState({
+    filter: false,
+    func: false,
+    columns: false,
+  });
+
+  const togglePopup = (key) => {
+    setPopupStates((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const closePopup = (key) => {
+    setPopupStates((prev) => ({ ...prev, [key]: false }));
+  };
+
+  const filterRef = useRef(null);
+  const funcRef = useRef(null);
+  const columnsRef = useRef(null);
+
+  const popupRefs = useMemo(
+    () => ({
+      filter: filterRef,
+      func: funcRef,
+      columns: columnsRef,
+    }),
+    []
+  );
 
   // Componente reutilizável para cabeçalhos ordenáveis
   function SortableHeaderButton({ label, column }) {
@@ -108,29 +127,22 @@ export default function App() {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (popupRef.current && !popupRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-      if (
-        funcPopupRef.current &&
-        !funcPopupRef.current.contains(event.target)
-      ) {
-        setIsFuncPopupOpen(false);
-      }
-      if (filterRef.current && !filterRef.current.contains(event.target)) {
-        setIsFilterOpen(false);
-      }
+      Object.entries(popupRefs).forEach(([key, ref]) => {
+        if (ref.current && !ref.current.contains(event.target)) {
+          closePopup(key);
+        }
+      });
     }
 
-    // Só adiciona se algum estiver aberto
-    if (isOpen || isFuncPopupOpen || isFilterOpen) {
+    const isAnyOpen = Object.values(popupStates).some(Boolean);
+    if (isAnyOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, isFuncPopupOpen, isFilterOpen]);
+  }, [popupStates, popupRefs]);
 
   const data = useMemo(
     () =>
@@ -225,12 +237,12 @@ export default function App() {
                 className={`cursor-pointer ${
                   isAnyStatusSelected ? "text-blue-900" : "text-black"
                 }`}
-                onClick={() => setIsFilterOpen((prev) => !prev)}
+                onClick={() => togglePopup("filter")}
               />
             </div>
-            {isFilterOpen && (
+            {popupStates.filter && (
               <div
-                ref={filterRef}
+                ref={popupRefs.filter}
                 className="absolute top-9 w-52 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
               >
                 <h2 className="text-sm font-semibold mb-2">
@@ -302,9 +314,10 @@ export default function App() {
     columnOrder,
     enableResizing,
     selectedStatus,
-    isFilterOpen,
     isAnyStatusSelected,
     columnSizes,
+    popupRefs,
+    popupStates,
   ]);
 
   const onDragEnd = (event) => {
@@ -446,7 +459,7 @@ export default function App() {
         </button>
         <button
           className="px-4 py-3 bg-black text-white rounded-md"
-          onClick={() => setIsFuncPopupOpen((prev) => !prev)}
+          onClick={() => togglePopup("func")}
         >
           Funcionalidades
         </button>
@@ -473,14 +486,14 @@ export default function App() {
         </select>
       </div>
 
-      {isFuncPopupOpen && (
+      {popupStates.func && (
         <div
-          ref={funcPopupRef}
+          ref={popupRefs.func}
           className="absolute z-[1000] top-24 left-1/2 -translate-x-1/2 w-[500px] bg-white border border-gray-300 shadow-xl rounded-lg p-6"
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Funcionalidades</h2>
-            <button onClick={() => setIsFuncPopupOpen(false)}>✖</button>
+            <button onClick={() => closePopup("func")}>✖</button>
           </div>
 
           {/* Conteúdo de funcionalidades aqui */}
@@ -510,15 +523,15 @@ export default function App() {
             {/* OCULTAR / EXIBIR */}
             <div className="relative inline-block">
               <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => togglePopup("columns")}
                 className="flex items-center gap-3 px-4 py-2 bg-black text-white rounded-md"
               >
                 Ocultar/Exibir Colunas <IoIosArrowForward />
               </button>
 
-              {isOpen && (
+              {popupStates.columns && (
                 <div
-                  ref={popupRef}
+                  ref={popupRefs.columns}
                   className="absolute z-[1000] mr-[-33px] right-0 top-0 w-64 bg-white border border-gray-300 shadow-lg rounded-md p-4"
                 >
                   {/* Checkbox para selecionar/desmarcar todas as colunas */}
