@@ -146,6 +146,7 @@ export default function App() {
     "cpf",
     "city",
     "status",
+    "teste",
     "actions",
   ]);
 
@@ -336,6 +337,12 @@ export default function App() {
         enableResizing,
         size: columnSizes["actions"] || 150,
       },
+      {
+        id: "teste",
+        header: "Teste",
+        accessorKey: "teste",
+        enableHiding: true,
+      },
     ];
 
     return columnOrder
@@ -406,18 +413,18 @@ export default function App() {
     pageSize: 5,
   });
 
-  const [visibleColumns, setVisibleColumns] = useState(
-    columns.reduce((acc, col) => ({ ...acc, [col.id]: true }), {})
-  );
+  const initiallyHiddenColumns = ["teste"];
 
-  const filteredColumns = useMemo(
-    () => columns.filter((col) => visibleColumns[col.id]),
-    [columns, visibleColumns]
+  const [visibleColumns, setVisibleColumns] = useState(() =>
+    columns.reduce((acc, col) => {
+      acc[col.id] = !initiallyHiddenColumns.includes(col.id);
+      return acc;
+    }, {})
   );
 
   const table = useReactTable({
     data: filteredData,
-    columns: filteredColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -426,8 +433,10 @@ export default function App() {
       globalFilter,
       columnFilters,
       pagination,
+      columnVisibility: visibleColumns,
     },
     onPaginationChange: setPagination,
+    onColumnVisibilityChange: setVisibleColumns,
     enableColumnResizing: enableResizing,
     columnResizeMode: "onChange",
   });
@@ -464,8 +473,9 @@ export default function App() {
       ...prev,
       [columnId]: !prev[columnId],
     }));
-  };
 
+    table.getColumn(columnId)?.toggleVisibility();
+  };
   return (
     <div className="p-6 max-w-[80%] mx-auto bg-gray-50 rounded-lg shadow-lg relative">
       <div className="relative flex gap-3 items-center">
