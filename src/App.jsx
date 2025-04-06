@@ -45,6 +45,31 @@ export default function App() {
 
   const [columnSizes, setColumnSizes] = useState({});
 
+  // Componente reutilizável para cabeçalhos ordenáveis
+  function SortableHeaderButton({ label, column }) {
+    return (
+      <button
+        className="flex items-center gap-1 cursor-pointer"
+        onClick={() => {
+          if (column.getIsSorted() === "desc") {
+            column.clearSorting();
+          } else {
+            column.toggleSorting(column.getIsSorted() === "asc");
+          }
+        }}
+      >
+        {label}{" "}
+        {column.getIsSorted() === "asc" ? (
+          <BsFillCaretUpFill />
+        ) : column.getIsSorted() === "desc" ? (
+          <BsFillCaretDownFill />
+        ) : (
+          <BsChevronExpand />
+        )}
+      </button>
+    );
+  }
+
   useEffect(() => {
     const updateSizes = () => {
       const width = window.innerWidth;
@@ -157,25 +182,7 @@ export default function App() {
         id: "name",
         accessorKey: "name",
         header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 cursor-pointer"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            Nome{" "}
-            {column.getIsSorted() === "asc" ? (
-              <BsFillCaretUpFill />
-            ) : column.getIsSorted() === "desc" ? (
-              <BsFillCaretDownFill />
-            ) : (
-              <BsChevronExpand />
-            )}
-          </button>
+          <SortableHeaderButton label="Nome" column={column} />
         ),
         enableSorting: true,
         enableResizing: true,
@@ -185,25 +192,7 @@ export default function App() {
         id: "cpf",
         accessorKey: "cpf",
         header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 cursor-pointer"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            CPF / CNPJ{" "}
-            {column.getIsSorted() === "asc" ? (
-              <BsFillCaretUpFill />
-            ) : column.getIsSorted() === "desc" ? (
-              <BsFillCaretDownFill />
-            ) : (
-              <BsChevronExpand />
-            )}
-          </button>
+          <SortableHeaderButton label="CPF" column={column} />
         ),
         enableSorting: true,
         enableResizing: true,
@@ -213,25 +202,7 @@ export default function App() {
         id: "city",
         accessorKey: "city",
         header: ({ column }) => (
-          <button
-            className="flex items-center gap-1 cursor-pointer"
-            onClick={() => {
-              if (column.getIsSorted() === "desc") {
-                column.clearSorting();
-              } else {
-                column.toggleSorting(column.getIsSorted() === "asc");
-              }
-            }}
-          >
-            Cidade{" "}
-            {column.getIsSorted() === "asc" ? (
-              <BsFillCaretUpFill />
-            ) : column.getIsSorted() === "desc" ? (
-              <BsFillCaretDownFill />
-            ) : (
-              <BsChevronExpand />
-            )}
-          </button>
+          <SortableHeaderButton label="Cidade" column={column} />
         ),
         enableSorting: true,
         enableResizing: true,
