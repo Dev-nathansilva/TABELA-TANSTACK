@@ -86,47 +86,26 @@ export default function App() {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
         setIsOpen(false);
       }
-    }
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
       if (
         funcPopupRef.current &&
         !funcPopupRef.current.contains(event.target)
       ) {
         setIsFuncPopupOpen(false);
       }
-    }
-
-    if (isFuncPopupOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isFuncPopupOpen]);
-
-  // Fecha o popup se clicar fora
-  useEffect(() => {
-    function handleClickOutside(event) {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    // Só adiciona se algum estiver aberto
+    if (isOpen || isFuncPopupOpen || isFilterOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, isFuncPopupOpen, isFilterOpen]);
 
   const data = useMemo(
     () =>
@@ -476,6 +455,7 @@ export default function App() {
 
     table.getColumn(columnId)?.toggleVisibility();
   };
+
   return (
     <div className="p-6 max-w-[80%] mx-auto bg-gray-50 rounded-lg shadow-lg relative">
       <div className="relative flex gap-3 items-center">
