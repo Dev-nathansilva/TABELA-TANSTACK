@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -27,6 +27,7 @@ import {
 import { LuListFilter } from "react-icons/lu";
 import { IoBrowsersOutline } from "react-icons/io5";
 import { IoIosArrowForward } from "react-icons/io";
+const popupKeys = ["filter", "func", "columns"];
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -37,11 +38,14 @@ export default function App() {
   const [enableDragging, setEnableDragging] = useState(false);
   const [columnSizes, setColumnSizes] = useState({});
 
-  const [popupStates, setPopupStates] = useState({
-    filter: false,
-    func: false,
-    columns: false,
-  });
+  const [popupStates, setPopupStates] = useState(
+    Object.fromEntries(popupKeys.map((key) => [key, false]))
+  );
+
+  const popupRefs = useMemo(
+    () => Object.fromEntries(popupKeys.map((key) => [key, React.createRef()])),
+    []
+  );
 
   const togglePopup = (key) => {
     setPopupStates((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -50,19 +54,6 @@ export default function App() {
   const closePopup = (key) => {
     setPopupStates((prev) => ({ ...prev, [key]: false }));
   };
-
-  const filterRef = useRef(null);
-  const funcRef = useRef(null);
-  const columnsRef = useRef(null);
-
-  const popupRefs = useMemo(
-    () => ({
-      filter: filterRef,
-      func: funcRef,
-      columns: columnsRef,
-    }),
-    []
-  );
 
   // Componente reutilizável para cabeçalhos ordenáveis
   function SortableHeaderButton({ label, column }) {
