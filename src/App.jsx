@@ -27,7 +27,7 @@ import {
 import { LuListFilter } from "react-icons/lu";
 import { IoBrowsersOutline } from "react-icons/io5";
 import { IoIosArrowForward } from "react-icons/io";
-const popupKeys = ["filter", "func", "columns"];
+import { useCallback } from "react";
 
 export default function App() {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -38,22 +38,31 @@ export default function App() {
   const [enableDragging, setEnableDragging] = useState(false);
   const [columnSizes, setColumnSizes] = useState({});
 
-  const [popupStates, setPopupStates] = useState(
-    Object.fromEntries(popupKeys.map((key) => [key, false]))
-  );
+  // Componente reutilizável para gerenciar popups
+  function usePopupManager(keys) {
+    const [popupStates, setPopupStates] = useState(
+      Object.fromEntries(keys.map((key) => [key, false]))
+    );
 
-  const popupRefs = useMemo(
-    () => Object.fromEntries(popupKeys.map((key) => [key, React.createRef()])),
-    []
-  );
+    const popupRefs = useMemo(
+      () => Object.fromEntries(keys.map((key) => [key, React.createRef()])),
+      [keys]
+    );
 
-  const togglePopup = (key) => {
-    setPopupStates((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+    const togglePopup = useCallback((key) => {
+      setPopupStates((prev) => ({ ...prev, [key]: !prev[key] }));
+    }, []);
 
-  const closePopup = (key) => {
-    setPopupStates((prev) => ({ ...prev, [key]: false }));
-  };
+    const closePopup = useCallback((key) => {
+      setPopupStates((prev) => ({ ...prev, [key]: false }));
+    }, []);
+
+    return { popupStates, popupRefs, togglePopup, closePopup };
+  }
+
+  const popupKeys = ["filter", "func", "columns"];
+  const { popupStates, popupRefs, togglePopup, closePopup } =
+    usePopupManager(popupKeys);
 
   // Componente reutilizável para cabeçalhos ordenáveis
   function SortableHeaderButton({ label, column }) {
@@ -133,7 +142,7 @@ export default function App() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [popupStates, popupRefs]);
+  }, [popupStates, popupRefs, closePopup]);
 
   const data = useMemo(
     () =>
@@ -309,6 +318,7 @@ export default function App() {
     columnSizes,
     popupRefs,
     popupStates,
+    togglePopup,
   ]);
 
   const onDragEnd = (event) => {
