@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -29,7 +29,6 @@ export default function CustomTable({
   columns,
   enableResizing,
   setEnableResizing,
-  selectedStatus,
   initiallyHiddenColumns,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -76,18 +75,12 @@ export default function CustomTable({
     );
   }
 
-  const filteredData = useMemo(() => {
-    return selectedStatus.length > 0
-      ? data.filter((row) => selectedStatus.includes(row.status))
-      : data;
-  }, [data, selectedStatus]);
-
   // PAGINAÇÃO
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 5,
   });
-  const totalPages = Math.ceil(filteredData.length / pagination.pageSize);
+  const totalPages = Math.ceil(data.length / pagination.pageSize);
   const currentPage = pagination.pageIndex + 1;
   const maxPagesToShow = 5;
 
@@ -119,7 +112,7 @@ export default function CustomTable({
 
   //   TABELA (useReactTable)
   const table = useReactTable({
-    data: filteredData,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -386,7 +379,7 @@ export default function CustomTable({
       <div className="flex justify-between mt-4 items-center">
         <span className="flex items-center gap-1.5 bg-gray-100 border border-gray-400 p-2 rounded-2xl">
           <IoBrowsersOutline />
-          Total: {filteredData.length}
+          Total: {data.length}
         </span>
         <div className="flex gap-2">
           <button
