@@ -8,18 +8,43 @@ import {
 import { LuListFilter } from "react-icons/lu";
 import { FiMail, FiEdit, FiTrash2 } from "react-icons/fi";
 import usePopupManager from "../hooks/popupmanager";
+import { useCallback } from "react";
 
 export default function ClientesTable() {
   const [clientes, setClientes] = useState([]);
   const [enableResizing, setEnableResizing] = useState(false);
   const [columnSizes, setColumnSizes] = useState({});
-  const [selectedStatus, setSelectedStatus] = useState([]);
-  const isAnyStatusSelected = selectedStatus.length > 0;
-  const popupKeys = ["filter", "tipo"];
-  const { popupStates, popupRefs, togglePopup } = usePopupManager(popupKeys);
+  const [filters, setFilters] = useState({
+    status: [],
+    tipo: [],
+  });
+  const filterConfig = useMemo(
+    () => [
+      {
+        key: "status",
+        label: "Status",
+        options: ["Ativo", "Inativo"],
+      },
+      {
+        key: "Tipo",
+        label: "Tipo",
+        options: ["PessoaFisica", "PessoaJuridica", "Empresa"],
+      },
+    ],
+    []
+  );
 
-  const [selectedTipos, setSelectedTipos] = useState([]);
-  const isAnyTipoSelected = selectedTipos.length > 0;
+  const toggleFilterValue = (filterKey, value) => {
+    setFilters((prev) => {
+      const current = prev[filterKey] || [];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [filterKey]: updated };
+    });
+  };
+  const popupKeys = filterConfig.map((f) => f.key);
+  const { popupStates, popupRefs, togglePopup } = usePopupManager(popupKeys);
 
   const formatarData = (dataISO) => {
     const data = new Date(dataISO);
@@ -91,20 +116,55 @@ export default function ClientesTable() {
     fetchData();
   }, []);
 
-  const handleTipoChange = (tipo) => {
-    setSelectedTipos((prev) =>
-      prev.includes(tipo) ? prev.filter((t) => t !== tipo) : [...prev, tipo]
-    );
-  };
+  const renderFilterHeader = useCallback(
+    (key) => {
+      const config = filterConfig.find((f) => f.key === key);
+      const selected = filters[key] || [];
+      const isSelected = selected.length > 0;
 
-  const handleStatusChange = (status) => {
-    setSelectedStatus(
-      (prev) =>
-        prev.includes(status)
-          ? prev.filter((s) => s !== status) // remove
-          : [...prev, status] // adiciona
-    );
-  };
+      return (
+        <div className="relative gap-3 flex items-center">
+          <span>{config.label}</span>
+          <div
+            className={`filter-icon p-1 rounded-[4px] ${
+              isSelected ? "bg-blue-200" : "bg-gray-100 hover:bg-gray-300"
+            }`}
+          >
+            <LuListFilter
+              className={`cursor-pointer ${
+                isSelected ? "text-blue-900" : "text-black"
+              }`}
+              onClick={() => togglePopup(key)}
+            />
+          </div>
+          {popupStates[key] && (
+            <div
+              ref={popupRefs[key]}
+              className="absolute top-9 w-60 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
+            >
+              <h2 className="text-sm font-semibold mb-2">
+                Filtrar por {config.label}
+              </h2>
+              <div className="flex flex-col gap-2 text-sm">
+                {config.options.map((option) => (
+                  <label key={option} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(option)}
+                      onChange={() => toggleFilterValue(key, option)}
+                    />
+                    {option}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    },
+    [filters, popupStates, popupRefs, togglePopup, filterConfig]
+  );
+
   const [columnOrder, setColumnOrder] = useState([
     "Selecionar",
     "Nome",
@@ -182,9 +242,7 @@ export default function ClientesTable() {
       {
         id: "CPF/CPNJ",
         accessorKey: "CPF/CPNJ",
-        header: ({ column }) => (
-          <SortableHeaderButton label="CPF/CPNJ" column={column} />
-        ),
+
         enableSorting: true,
         enableResizing: true,
         size: columnSizes["CPF/CPNJ"] || 150,
@@ -193,45 +251,7 @@ export default function ClientesTable() {
       {
         id: "Tipo",
         accessorKey: "Tipo",
-        header: () => (
-          <div className="relative gap-3 flex items-center">
-            <span>Tipo</span>
-            <div
-              className={`filter-icon p-1 rounded-[4px]  ${
-                isAnyTipoSelected
-                  ? "bg-blue-200"
-                  : "bg-gray-100 hover:bg-gray-300"
-              }`}
-            >
-              <LuListFilter
-                className={`cursor-pointer ${
-                  isAnyTipoSelected ? "text-blue-900" : "text-black"
-                }`}
-                onClick={() => togglePopup("tipo")}
-              />
-            </div>
-            {popupStates.tipo && (
-              <div
-                ref={popupRefs.tipo}
-                className="absolute top-9 w-60 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
-              >
-                <h2 className="text-sm font-semibold mb-2">Filtrar por Tipo</h2>
-                <div className="flex flex-col gap-2 text-sm">
-                  {["PessoaFisica", "PessoaJuridica", "Empresa"].map((tipo) => (
-                    <label key={tipo} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedTipos.includes(tipo)}
-                        onChange={() => handleTipoChange(tipo)}
-                      />
-                      {tipo}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ),
+        header: () => renderFilterHeader("Tipo"),
         enableSorting: true,
         enableResizing: true,
         size: columnSizes["Tipo"] || 150,
@@ -240,53 +260,7 @@ export default function ClientesTable() {
       {
         id: "status",
         accessorKey: "status",
-        header: () => (
-          <div className="relative gap-3 flex items-center">
-            <span>Status</span>
-            <div
-              className={`filter-icon p-1 rounded-[4px]  ${
-                isAnyStatusSelected
-                  ? "bg-blue-200"
-                  : "bg-gray-100 hover:bg-gray-300"
-              }`}
-            >
-              <LuListFilter
-                className={`cursor-pointer ${
-                  isAnyStatusSelected ? "text-blue-900" : "text-black"
-                }`}
-                onClick={() => togglePopup("filter")}
-              />
-            </div>
-            {popupStates.filter && (
-              <div
-                ref={popupRefs.filter}
-                className="absolute top-9 w-52 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
-              >
-                <h2 className="text-sm font-semibold mb-2">
-                  Filtrar por Status
-                </h2>
-                <div className="flex flex-col gap-2 text-sm">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatus.includes("Ativo")}
-                      onChange={() => handleStatusChange("Ativo")}
-                    />
-                    Ativo
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatus.includes("Inativo")}
-                      onChange={() => handleStatusChange("Inativo")}
-                    />
-                    Inativo
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-        ),
+        header: () => renderFilterHeader("status"),
         enableSorting: true,
         enableResizing: true,
         size: columnSizes["status"] || 150,
@@ -346,18 +320,7 @@ export default function ClientesTable() {
     return columnOrder
       .map((colId) => baseColumns.find((col) => col.id === colId))
       .filter(Boolean);
-  }, [
-    columnOrder,
-    enableResizing,
-    selectedStatus,
-    isAnyStatusSelected,
-    columnSizes,
-    popupRefs,
-    popupStates,
-    togglePopup,
-    isAnyTipoSelected,
-    selectedTipos,
-  ]);
+  }, [columnOrder, enableResizing, columnSizes, renderFilterHeader]);
 
   const initiallyHiddenColumns = [
     "Email",
@@ -367,13 +330,16 @@ export default function ClientesTable() {
 
   const filteredClientes = useMemo(() => {
     return clientes.filter((cliente) => {
-      const statusMatch =
-        selectedStatus.length === 0 || selectedStatus.includes(cliente.status);
-      const tipoMatch =
-        selectedTipos.length === 0 || selectedTipos.includes(cliente.Tipo);
-      return statusMatch && tipoMatch;
+      return filterConfig.every(({ key }) => {
+        const selectedValues = filters[key];
+        return (
+          !selectedValues ||
+          selectedValues.length === 0 ||
+          selectedValues.includes(cliente[key])
+        );
+      });
     });
-  }, [clientes, selectedStatus, selectedTipos]);
+  }, [clientes, filters, filterConfig]);
 
   return (
     <div>
@@ -384,7 +350,6 @@ export default function ClientesTable() {
         setColumnOrder={setColumnOrder}
         enableResizing={enableResizing}
         setEnableResizing={setEnableResizing}
-        selectedStatus={selectedStatus}
         initiallyHiddenColumns={initiallyHiddenColumns}
       />
     </div>
