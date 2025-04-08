@@ -9,6 +9,7 @@ import { LuListFilter } from "react-icons/lu";
 import { FiMail, FiEdit, FiTrash2 } from "react-icons/fi";
 import usePopupManager from "../hooks/popupmanager";
 import { useCallback } from "react";
+import { FaRegCalendarAlt } from "react-icons/fa";
 
 export default function ClientesTable() {
   const [clientes, setClientes] = useState([]);
@@ -17,6 +18,8 @@ export default function ClientesTable() {
   const [filters, setFilters] = useState({
     status: [],
     tipo: [],
+    dataInicial: null,
+    dataFinal: null,
   });
   const filterConfig = useMemo(
     () => [
@@ -43,7 +46,8 @@ export default function ClientesTable() {
       return { ...prev, [filterKey]: updated };
     });
   };
-  const popupKeys = filterConfig.map((f) => f.key);
+  const popupKeys = [...filterConfig.map((f) => f.key), "dataCadastro"];
+
   const { popupStates, popupRefs, togglePopup } = usePopupManager(popupKeys);
 
   const formatarData = (dataISO) => {
@@ -106,6 +110,7 @@ export default function ClientesTable() {
           Email: cliente.email,
           "Inscricao Estadual": cliente.inscricaoEstadual,
           "Data de Cadastro": formatarData(cliente.dataCadastro),
+          dataCadastroRaw: cliente.dataCadastro,
         }));
         setClientes(mappedData);
       } catch (error) {
@@ -126,15 +131,13 @@ export default function ClientesTable() {
         <div className="relative gap-3 flex items-center">
           <span>{config.label}</span>
           <div
-            className={`filter-icon p-1 rounded-[4px] ${
+            className={`cursor-pointer filter-icon p-1 rounded-[4px] ${
               isSelected ? "bg-blue-200" : "bg-gray-100 hover:bg-gray-300"
             }`}
+            onClick={() => togglePopup(key)}
           >
             <LuListFilter
-              className={`cursor-pointer ${
-                isSelected ? "text-blue-900" : "text-black"
-              }`}
-              onClick={() => togglePopup(key)}
+              className={` ${isSelected ? "text-blue-900" : "text-black"}`}
             />
           </div>
           {popupStates[key] && (
@@ -164,6 +167,89 @@ export default function ClientesTable() {
     },
     [filters, popupStates, popupRefs, togglePopup, filterConfig]
   );
+
+  const renderDateRangeFilterHeader = useCallback(() => {
+    const isActive = filters.dataInicial || filters.dataFinal;
+
+    return (
+      <div className="relative gap-3 flex items-center">
+        <span>Data de Cadastro</span>
+        <div
+          className={`cursor-pointer filter-icon p-1 rounded-[4px] ${
+            isActive ? "bg-blue-200" : "bg-gray-100 hover:bg-gray-300"
+          }`}
+          onClick={() => togglePopup("dataCadastro")}
+        >
+          <FaRegCalendarAlt
+            className={`text-[15px]  ${
+              isActive ? "text-blue-900" : "text-black"
+            }`}
+          />
+        </div>
+
+        {popupStates["dataCadastro"] && (
+          <div
+            ref={popupRefs["dataCadastro"]}
+            className="absolute top-9 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-10 p-4"
+          >
+            <h2 className="text-sm font-semibold mb-2">
+              Filtrar por intervalo
+            </h2>
+            <div className="flex flex-col gap-2 text-sm">
+              <label>
+                Data Inicial:
+                <input
+                  type="date"
+                  className="w-full border px-2 py-1 rounded mt-1"
+                  value={filters.dataInicial || ""}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dataInicial: e.target.value || null,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Data Final:
+                <input
+                  type="date"
+                  className="w-full border px-2 py-1 rounded mt-1"
+                  value={filters.dataFinal || ""}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dataFinal: e.target.value || null,
+                    }))
+                  }
+                />
+              </label>
+              {(filters.dataInicial || filters.dataFinal) && (
+                <button
+                  className="mt-2 text-xs text-blue-500 underline"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      dataInicial: null,
+                      dataFinal: null,
+                    }))
+                  }
+                >
+                  Limpar filtro
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }, [
+    filters.dataInicial,
+    filters.dataFinal,
+    popupStates,
+    popupRefs,
+    togglePopup,
+  ]);
 
   const [columnOrder, setColumnOrder] = useState([
     "Selecionar",
@@ -310,7 +396,7 @@ export default function ClientesTable() {
       // COLUNA EMAIL
       {
         id: "Data de Cadastro",
-        header: "Data de Cadastro",
+        header: renderDateRangeFilterHeader,
         accessorKey: "Data de Cadastro",
         enableHiding: true,
         size: 200,
@@ -320,7 +406,13 @@ export default function ClientesTable() {
     return columnOrder
       .map((colId) => baseColumns.find((col) => col.id === colId))
       .filter(Boolean);
-  }, [columnOrder, enableResizing, columnSizes, renderFilterHeader]);
+  }, [
+    columnOrder,
+    enableResizing,
+    columnSizes,
+    renderFilterHeader,
+    renderDateRangeFilterHeader,
+  ]);
 
   const initiallyHiddenColumns = [
     "Email",
@@ -330,7 +422,7 @@ export default function ClientesTable() {
 
   const filteredClientes = useMemo(() => {
     return clientes.filter((cliente) => {
-      return filterConfig.every(({ key }) => {
+      const matchesFilter = filterConfig.every(({ key }) => {
         const selectedValues = filters[key];
         return (
           !selectedValues ||
@@ -338,6 +430,15 @@ export default function ClientesTable() {
           selectedValues.includes(cliente[key])
         );
       });
+
+      const cadastroDate = cliente.dataCadastroRaw?.slice(0, 10); // 'YYYY-MM-DD'
+
+      const afterStart =
+        !filters.dataInicial || cadastroDate >= filters.dataInicial;
+
+      const beforeEnd = !filters.dataFinal || cadastroDate <= filters.dataFinal;
+
+      return matchesFilter && afterStart && beforeEnd;
     });
   }, [clientes, filters, filterConfig]);
 

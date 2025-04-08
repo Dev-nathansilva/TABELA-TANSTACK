@@ -7,7 +7,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
 } from "@tanstack/react-table";
-import { FiSearch } from "react-icons/fi";
+import { FiAlertOctagon, FiSearch } from "react-icons/fi";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -278,7 +278,7 @@ export default function CustomTable({
       )}
 
       {/* Contêiner de tabela com overflow-x-auto */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto min-h-[350px]">
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={columns.map((col) => col.id)}>
             <table className=" table-fixed  border-separate border-spacing-y-3">
@@ -337,8 +337,9 @@ export default function CustomTable({
                   <tr>
                     <td
                       colSpan={columns.length}
-                      className="p-4 text-center text-gray-500"
+                      className="  border border-[#e7e7e7]  rounded-[10px] p-4 text-gray-500 text-center"
                     >
+                      <FiAlertOctagon className="inline-block mr-2 mt-[-2px]" />{" "}
                       Nenhum item encontrado
                     </td>
                   </tr>
