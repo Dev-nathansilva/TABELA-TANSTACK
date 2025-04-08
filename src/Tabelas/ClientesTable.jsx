@@ -10,17 +10,20 @@ import { FiMail, FiEdit, FiTrash2 } from "react-icons/fi";
 import usePopupManager from "../hooks/popupmanager";
 import { useCallback } from "react";
 import { FaRegCalendarAlt } from "react-icons/fa";
+import { IoClose } from "react-icons/io5";
+
+const filtrosIniciais = {
+  status: [],
+  tipo: [],
+  dataInicial: null,
+  dataFinal: null,
+};
 
 export default function ClientesTable() {
   const [clientes, setClientes] = useState([]);
   const [enableResizing, setEnableResizing] = useState(false);
   const [columnSizes, setColumnSizes] = useState({});
-  const [filters, setFilters] = useState({
-    status: [],
-    tipo: [],
-    dataInicial: null,
-    dataFinal: null,
-  });
+  const [filters, setFilters] = useState(filtrosIniciais);
   const filterConfig = useMemo(
     () => [
       {
@@ -442,6 +445,26 @@ export default function ClientesTable() {
     });
   }, [clientes, filters, filterConfig]);
 
+  function BotaoLimparFiltros({ onClick }) {
+    return (
+      <button
+        className="cursor-pointer rounded text-sm font-medium text-gray-400 hover:text-gray-600 flex items-center gap-2"
+        onClick={onClick}
+      >
+        <IoClose /> Limpar Filtros
+      </button>
+    );
+  }
+
+  const temFiltrosAtivos = useMemo(() => {
+    const algumFiltroSelecionado = Object.entries(filters).some(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== null && value !== "";
+    });
+
+    return algumFiltroSelecionado;
+  }, [filters]);
+
   return (
     <div>
       <CustomTable
@@ -452,6 +475,11 @@ export default function ClientesTable() {
         enableResizing={enableResizing}
         setEnableResizing={setEnableResizing}
         initiallyHiddenColumns={initiallyHiddenColumns}
+        extraHeaderContent={
+          temFiltrosAtivos ? (
+            <BotaoLimparFiltros onClick={() => setFilters(filtrosIniciais)} />
+          ) : null
+        }
       />
     </div>
   );

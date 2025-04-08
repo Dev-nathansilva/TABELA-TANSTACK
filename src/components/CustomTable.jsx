@@ -21,6 +21,7 @@ import {
 import { IoBrowsersOutline } from "react-icons/io5";
 import { IoIosArrowForward } from "react-icons/io";
 import usePopupManager from "../hooks/popupmanager";
+import { LuSettings2 } from "react-icons/lu";
 
 export default function CustomTable({
   title,
@@ -30,6 +31,7 @@ export default function CustomTable({
   enableResizing,
   setEnableResizing,
   initiallyHiddenColumns,
+  extraHeaderContent,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters] = useState([]);
@@ -160,42 +162,45 @@ export default function CustomTable({
             className="w-full focus:outline-none"
           />
         </div>
-        <button className="px-4 py-3 bg-black text-white rounded-md">
+        {/* <button className="px-4 py-3 bg-black text-white rounded-md">
           Filtros
-        </button>
+        </button> */}
         <button
-          className="px-4 py-3 bg-black text-white rounded-md"
+          className="px-4 py-3 bg-gray-200 hover:bg-gray-300 cursor-pointer text-black rounded-md text-[20px] border border-gray-300"
           onClick={() => togglePopup("func")}
         >
-          Funcionalidades
+          <LuSettings2 />
         </button>
       </div>
 
-      <div className="mb-2 mr-4 flex items-center justify-end gap-2">
-        <label>Itens por página: </label>
-        <select
-          value={pagination.pageSize}
-          onChange={(e) =>
-            setPagination((prev) => ({
-              ...prev,
-              pageSize: Number(e.target.value),
-              pageIndex: 0,
-            }))
-          }
-          className="border p-1 rounded"
-        >
-          {[5, 10, 15].map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+      <div className="my-2 px-4 flex w-full justify-between items-end">
+        {extraHeaderContent ? <div>{extraHeaderContent}</div> : <div></div>}
+        <div className="mr-4 flex items-center justify-end gap-2">
+          <label>Itens por página: </label>
+          <select
+            value={pagination.pageSize}
+            onChange={(e) =>
+              setPagination((prev) => ({
+                ...prev,
+                pageSize: Number(e.target.value),
+                pageIndex: 0,
+              }))
+            }
+            className="border p-1 rounded"
+          >
+            {[5, 10, 15].map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {popupStates.func && (
         <div
           ref={popupRefs.func}
-          className="absolute z-[1000] top-24 left-1/2 -translate-x-1/2 w-[500px] bg-white border border-gray-300 shadow-xl rounded-lg p-6"
+          className="absolute z-[1000] top-30 left-[53%] -translate-x-1/2 w-[500px] bg-white border border-gray-300 shadow-xl rounded-lg p-6"
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Funcionalidades</h2>
@@ -281,7 +286,7 @@ export default function CustomTable({
       <div className="overflow-x-auto min-h-[350px]">
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={columns.map((col) => col.id)}>
-            <table className=" table-fixed  border-separate border-spacing-y-3">
+            <table className="w-full table-fixed  border-separate border-spacing-y-3">
               <thead className="bg-white">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
@@ -337,7 +342,7 @@ export default function CustomTable({
                   <tr>
                     <td
                       colSpan={columns.length}
-                      className="  border border-[#e7e7e7]  rounded-[10px] p-4 text-gray-500 text-center"
+                      className="  border border-[#e7e7e7] rounded-[10px] p-4 text-gray-500 text-center"
                     >
                       <FiAlertOctagon className="inline-block mr-2 mt-[-2px]" />{" "}
                       Nenhum item encontrado
